@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Treino de FPS</title>
+<style>
+/* O estilo permanece o mesmo */
+body {
+    margin: 0;
+    height: 100vh;
+    overflow: hidden;
+    background: #101010;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: Arial, sans-serif;
+    color: white;
+    position: relative;
+}
+
+#info {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    font-size: 18px;
+    z-index: 1000;
+}
+
+#info span {
+    color: yellow;
+    font-weight: bold;
+}
+
+#game-over {
+    display: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 30px;
+    text-align: center;
+}
+
+#start-button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 20px;
+    padding: 15px 30px;
+    background-color: green;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    box-shadow: 0 0 15px rgba(0, 255, 0, 0.8);
+}
+
+.alvo {
+    position: absolute;
+    border-radius: 50%;
+    cursor: crosshair;
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.8);
+    transition: transform 0.1s;
+}
+
+.alvo:hover {
+    transform: scale(1.2);
+}
+</style>
+</head>
+<body>
+    <div id="info">
+        <p>Pontuação: <span id="pontuacao">0</span></p>
+        <p>Tempo restante: <span id="tempo-restante">30</span>s</p>
+    </div>
+    <div id="game-over">
+        <p>Fim de jogo!</p>
+        <p>Sua pontuação final: <span id="final-pontuacao">0</span></p>
+        <p>Média de tempo de reação (alvos vermelhos): <span id="media-tempo">0</span> segundos</p>
+        <button onclick="location.reload()">Jogar Novamente</button>
+    </div>
+    <button id="start-button">Começar</button>
+
+    <script>
+        const startButton = document.getElementById('start-button');
+        const info = document.getElementById('info');
+        const gameOverEl = document.getElementById('game-over');
+        const pontuacaoEl = document.getElementById('pontuacao');
+        const tempoRestanteEl = document.getElementById('tempo-restante');
+        const finalPontuacaoEl = document.getElementById('final-pontuacao');
+        const mediaTempoEl = document.getElementById('media-tempo');
+
+        let timer, gameInterval;
+        let pontuacao = 0;
+        let tempoRestante = 30;
+
+        let temposDeReacao = [];
+
+        function criarAlvo() {
+            const alvo = document.createElement('div');
+            alvo.classList.add('alvo');
+
+            const cores = ['red', 'red', 'red', 'blue', 'green', 'yellow'];
+            const cor = cores[Math.floor(Math.random() * cores.length)];
+            const tamanho = Math.random() * 40 + 30;
+
+            alvo.style.backgroundColor = cor;
+            alvo.style.width = `${tamanho}px`;
+            alvo.style.height = `${tamanho}px`;
+
+            const larguraTela = window.innerWidth;
+            const alturaTela = window.innerHeight;
+            alvo.style.left = `${Math.random() * (larguraTela - tamanho)}px`;
+            alvo.style.top = `${Math.random() * (alturaTela - tamanho)}px`;
+
+            const tempoCriacao = Date.now();
+
+            document.body.appendChild(alvo);
+
+            alvo.addEventListener('click', (event) => {
+                event.stopPropagation(); // Impede que o clique dispare no body
+                const tempoClique = Date.now();
+                if (cor === 'red') {
+                    const tempoReacao = (tempoClique - tempoCriacao) / 1000;
+                    temposDeReacao.push(tempoReacao);
+                    pontuacao += 10;
+                } else {
+                    pontuacao -= 5;
+                }
+                pontuacaoEl.textContent = pontuacao;
+                alvo.remove();
+            });
+
+            const tempoDeVida = cor === 'red' ? 1000 : 2000;
+            setTimeout(() => alvo.remove(), tempoDeVida);
+        }
+
+        function iniciarJogo() {
+            startButton.style.display = 'none';
+            info.style.display = 'block';
+
+            gameInterval = setInterval(criarAlvo, 800);
+
+            timer = setInterval(() => {
+                if (tempoRestante > 0) {
+                    tempoRestante--;
+                    tempoRestanteEl.textContent = tempoRestante;
+                } else {
+                    finalizarJogo();
+                }
+            }, 1000);
+        }
+
+        function calcularMedia(array) {
+            if (array.length === 0) return 0;
+            const soma = array.reduce((total, valor) => total + valor, 0);
+            return (soma / array.length).toFixed(2);
+        }
+
+        function finalizarJogo() {
+            clearInterval(timer);
+            clearInterval(gameInterval);
+            document.querySelectorAll('.alvo').forEach(alvo => alvo.remove());
+            gameOverEl.style.display = 'block';
+            finalPontuacaoEl.textContent = pontuacao;
+            mediaTempoEl.textContent = calcularMedia(temposDeReacao);
+        }
+
+        document.body.addEventListener('click', () => {
+            pontuacao -= 5;
+            pontuacaoEl.textContent = pontuacao;
+        });
+
+        startButton.addEventListener('click', iniciarJogo);
+    </script>
+</body>
+</html>
